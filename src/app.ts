@@ -1,8 +1,10 @@
 import express, { Request, Response, NextFunction, Express } from 'express';
 import { userRoutes } from './routes/userRoutes';
+import { bookRoutes } from './routes/bookRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { testConnection } from './config/database';
 import { UserModel } from './models/User';
+import { BookModel } from './models/Book';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +22,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/books', bookRoutes);
 
 // 404处理
 app.use('*', (req: Request, res: Response) => {
@@ -41,6 +44,7 @@ app.listen(PORT, async () => {
     // 初始化数据库表
     try {
       await UserModel.createTable();
+      await BookModel.createTable();
       console.log('数据库表初始化成功');
     } catch (error) {
       console.error('数据库表初始化失败:', error);

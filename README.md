@@ -36,7 +36,7 @@ npm install
 
 ### 2. 开发模式运行
 ```bash
- 
+npm run dev
 ```
 
 ### 3. 编译项目
@@ -61,7 +61,19 @@ npm start
 - `PUT /api/users/:id` - 更新用户信息
 - `DELETE /api/users/:id` - 删除用户
 
+### 图书管理接口
+- `GET /api/books` - 获取图书列表（支持分页和分类筛选）
+- `GET /api/books/search` - 搜索图书
+- `GET /api/books/categories` - 获取所有分类
+- `GET /api/books/:id` - 根据ID获取图书详情
+- `POST /api/books` - 创建新图书
+- `PUT /api/books/:id` - 更新图书信息
+- `PATCH /api/books/:id/stock` - 更新图书库存
+- `DELETE /api/books/:id` - 删除图书
+
 ### 示例请求
+
+#### 用户接口示例
 
 创建用户：
 ```bash
@@ -73,6 +85,41 @@ curl -X POST http://localhost:3000/api/users \
 获取所有用户：
 ```bash
 curl http://localhost:3000/api/users
+```
+
+#### 图书接口示例
+
+创建图书：
+```bash
+curl -X POST http://localhost:3000/api/books \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "JavaScript高级程序设计",
+    "author": "Nicholas C. Zakas",
+    "isbn": "9787115275790",
+    "description": "前端开发经典教程",
+    "price": 99.00,
+    "image_url": "https://example.com/book-cover.jpg",
+    "category": "编程",
+    "stock_quantity": 50
+  }'
+```
+
+获取图书列表（分页）：
+```bash
+curl "http://localhost:3000/api/books?page=1&limit=10&category=编程"
+```
+
+搜索图书：
+```bash
+curl "http://localhost:3000/api/books/search?keyword=JavaScript&page=1&limit=5"
+```
+
+更新图书库存：
+```bash
+curl -X PATCH http://localhost:3000/api/books/1/stock \
+  -H "Content-Type: application/json" \
+  -d '{"stock_quantity": 100}'
 ```
 
 ## 开发脚本
