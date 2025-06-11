@@ -13,9 +13,10 @@ router.get('/', async (req: Request, res: Response) => {
     const result = await BookModel.findAll(page, limit, category);
 
     res.json({
+      code: 200,
       success: true,
       data: {
-        books: result.books,
+        list: result.books,
         pagination: {
           page,
           limit,
@@ -28,6 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('获取图书列表失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '获取图书列表失败'
     });
@@ -43,6 +45,7 @@ router.get('/search', async (req: Request, res: Response) => {
 
     if (!keyword) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '搜索关键词不能为空'
       });
@@ -51,9 +54,10 @@ router.get('/search', async (req: Request, res: Response) => {
     const result = await BookModel.search(keyword, page, limit);
 
     res.json({
+      code: 200,
       success: true,
       data: {
-        books: result.books,
+        list: result.books,
         pagination: {
           page,
           limit,
@@ -67,6 +71,7 @@ router.get('/search', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('搜索图书失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '搜索图书失败'
     });
@@ -79,6 +84,7 @@ router.get('/categories', async (req: Request, res: Response) => {
     const categories = await BookModel.getCategories();
 
     res.json({
+      code: 200,
       success: true,
       data: categories,
       message: '获取分类列表成功'
@@ -86,6 +92,7 @@ router.get('/categories', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('获取分类列表失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '获取分类列表失败'
     });
@@ -98,6 +105,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '无效的图书ID'
       });
@@ -106,12 +114,14 @@ router.get('/:id', async (req: Request, res: Response) => {
     const book = await BookModel.findById(id);
     if (!book) {
       return res.status(404).json({
+        code: 404,
         success: false,
         message: '图书未找到'
       });
     }
 
     res.json({
+      code: 200,
       success: true,
       data: book,
       message: '获取图书成功'
@@ -119,6 +129,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('获取图书失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '获取图书失败'
     });
@@ -143,6 +154,7 @@ router.post('/', async (req: Request, res: Response) => {
     // 验证必填字段
     if (!title || !author || price === undefined) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '标题、作者和价格为必填项'
       });
@@ -151,6 +163,7 @@ router.post('/', async (req: Request, res: Response) => {
     // 验证价格
     if (isNaN(price) || price < 0) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '价格必须是有效的数字且不能为负数'
       });
@@ -161,6 +174,7 @@ router.post('/', async (req: Request, res: Response) => {
       const existingBook = await BookModel.findByISBN(isbn);
       if (existingBook) {
         return res.status(400).json({
+          code: 400,
           success: false,
           message: '该ISBN已存在'
         });
@@ -170,6 +184,7 @@ router.post('/', async (req: Request, res: Response) => {
     // 验证图片URL格式
     if (image_url && !isValidUrl(image_url)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '无效的图片URL格式'
       });
@@ -188,6 +203,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     res.status(201).json({
+      code: 201,
       success: true,
       data: newBook,
       message: '图书创建成功'
@@ -195,6 +211,7 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('创建图书失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '创建图书失败'
     });
@@ -207,17 +224,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '无效的图书ID'
-      });
-    }
-
-    // 检查图书是否存在
-    const existingBook = await BookModel.findById(id);
-    if (!existingBook) {
-      return res.status(404).json({
-        success: false,
-        message: '图书未找到'
       });
     }
 
@@ -233,19 +242,31 @@ router.put('/:id', async (req: Request, res: Response) => {
       stock_quantity
     } = req.body;
 
+    // 检查图书是否存在
+    const existingBook = await BookModel.findById(id);
+    if (!existingBook) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: '图书未找到'
+      });
+    }
+
     // 验证价格
     if (price !== undefined && (isNaN(price) || price < 0)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '价格必须是有效的数字且不能为负数'
       });
     }
 
-    // 检查ISBN是否与其他图书冲突
+    // 如果更新ISBN，检查是否与其他图书冲突
     if (isbn && isbn !== existingBook.isbn) {
       const isbnBook = await BookModel.findByISBN(isbn);
       if (isbnBook && isbnBook.id !== id) {
         return res.status(400).json({
+          code: 400,
           success: false,
           message: '该ISBN已被其他图书使用'
         });
@@ -255,25 +276,26 @@ router.put('/:id', async (req: Request, res: Response) => {
     // 验证图片URL格式
     if (image_url && !isValidUrl(image_url)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '无效的图片URL格式'
       });
     }
 
-    const updateData: any = {};
-    if (title !== undefined) updateData.title = title;
-    if (author !== undefined) updateData.author = author;
-    if (isbn !== undefined) updateData.isbn = isbn;
-    if (description !== undefined) updateData.description = description;
-    if (price !== undefined) updateData.price = parseFloat(price);
-    if (image_url !== undefined) updateData.image_url = image_url;
-    if (category !== undefined) updateData.category = category;
-    if (publish_date !== undefined) updateData.publish_date = new Date(publish_date);
-    if (stock_quantity !== undefined) updateData.stock_quantity = parseInt(stock_quantity);
-
-    const updatedBook = await BookModel.update(id, updateData);
+    const updatedBook = await BookModel.update(id, {
+      title,
+      author,
+      isbn,
+      description,
+      price: price !== undefined ? parseFloat(price) : undefined,
+      image_url,
+      category,
+      publish_date: publish_date ? new Date(publish_date) : undefined,
+      stock_quantity: stock_quantity !== undefined ? parseInt(stock_quantity) : undefined
+    });
 
     res.json({
+      code: 200,
       success: true,
       data: updatedBook,
       message: '图书更新成功'
@@ -281,53 +303,9 @@ router.put('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('更新图书失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '更新图书失败'
-    });
-  }
-});
-
-// 更新库存
-router.patch('/:id/stock', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    const { stock_quantity } = req.body;
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        success: false,
-        message: '无效的图书ID'
-      });
-    }
-
-    if (stock_quantity === undefined || isNaN(stock_quantity) || stock_quantity < 0) {
-      return res.status(400).json({
-        success: false,
-        message: '库存数量必须是有效的非负数'
-      });
-    }
-
-    // 检查图书是否存在
-    const existingBook = await BookModel.findById(id);
-    if (!existingBook) {
-      return res.status(404).json({
-        success: false,
-        message: '图书未找到'
-      });
-    }
-
-    const updatedBook = await BookModel.updateStock(id, parseInt(stock_quantity));
-
-    res.json({
-      success: true,
-      data: updatedBook,
-      message: '库存更新成功'
-    });
-  } catch (error) {
-    console.error('更新库存失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '更新库存失败'
     });
   }
 });
@@ -338,6 +316,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({
+        code: 400,
         success: false,
         message: '无效的图书ID'
       });
@@ -347,6 +326,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const existingBook = await BookModel.findById(id);
     if (!existingBook) {
       return res.status(404).json({
+        code: 404,
         success: false,
         message: '图书未找到'
       });
@@ -355,20 +335,73 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const deleted = await BookModel.delete(id);
     if (!deleted) {
       return res.status(500).json({
+        code: 500,
         success: false,
         message: '删除图书失败'
       });
     }
 
     res.json({
+      code: 200,
       success: true,
       message: '图书删除成功'
     });
   } catch (error) {
     console.error('删除图书失败:', error);
     res.status(500).json({
+      code: 500,
       success: false,
       message: '删除图书失败'
+    });
+  }
+});
+
+// 更新库存
+router.patch('/:id/stock', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { quantity } = req.body;
+
+    if (isNaN(id)) {
+      return res.status(400).json({
+        code: 400,
+        success: false,
+        message: '无效的图书ID'
+      });
+    }
+
+    if (quantity === undefined || isNaN(quantity) || quantity < 0) {
+      return res.status(400).json({
+        code: 400,
+        success: false,
+        message: '库存数量必须是有效的非负整数'
+      });
+    }
+
+    // 检查图书是否存在
+    const existingBook = await BookModel.findById(id);
+    if (!existingBook) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: '图书未找到'
+      });
+    }
+
+    const updatedBook = await BookModel.updateStock(id, parseInt(quantity));
+
+    res.json({
+      code: 200,
+      success: true,
+      data: updatedBook,
+      message: '库存更新成功'
+    });
+  } catch (error) {
+    console.error('更新库存失败:', error);
+    res.status(500).json({
+      code: 500,
+      success: false,
+      message: '更新库存失败'
     });
   }
 });

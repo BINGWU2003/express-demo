@@ -23,10 +23,24 @@ export class UserModel {
     await query(sql);
   }
 
-  // 获取所有用户
-  static async findAll(): Promise<User[]> {
-    const sql = 'SELECT * FROM users ORDER BY created_at DESC';
-    return await query(sql);
+  // 获取所有用户（支持分页）
+  static async findAll(page: number = 1, limit: number = 10): Promise<{ users: User[], total: number }> {
+    const offset = (page - 1) * limit;
+
+    // 确保参数是安全的整数
+    const safeLimit = Math.max(1, Math.min(100, parseInt(limit.toString())));
+    const safeOffset = Math.max(0, parseInt(offset.toString()));
+
+    // 获取总数
+    const countSql = 'SELECT COUNT(*) as total FROM users';
+    const countResult = await query(countSql);
+    const total = countResult[0].total;
+
+    // 获取分页数据 - 使用字符串拼接避免参数化问题
+    const sql = `SELECT * FROM users ORDER BY created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`;
+    const users = await query(sql);
+
+    return { users, total };
   }
 
   // 根据ID获取用户
@@ -41,6 +55,35 @@ export class UserModel {
     const sql = 'SELECT * FROM users WHERE email = ?';
     const users = await query(sql, [email]);
     return users.length > 0 ? users[0] : null;
+  }
+
+  // 搜索用户
+  static async search(keyword: string, page: number = 1, limit: number = 10): Promise<{ users: User[], total: number }> {
+    const offset = (page - 1) * limit;
+    const searchPattern = `%${keyword}%`;
+
+    // 确保参数是安全的整数
+    const safeLimit = Math.max(1, Math.min(100, parseInt(limit.toString())));
+    const safeOffset = Math.max(0, parseInt(offset.toString()));
+
+    // 获取总数
+    const countSql = `
+      SELECT COUNT(*) as total FROM users 
+      WHERE name LIKE ? OR email LIKE ?
+    `;
+    const countResult = await query(countSql, [searchPattern, searchPattern]);
+    const total = countResult[0].total;
+
+    // 获取搜索结果 - 使用字符串拼接避免参数化问题
+    const sql = `
+      SELECT * FROM users 
+      WHERE name LIKE ? OR email LIKE ?
+      ORDER BY created_at DESC 
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
+    `;
+    const users = await query(sql, [searchPattern, searchPattern]);
+
+    return { users, total };
   }
 
   // 创建用户

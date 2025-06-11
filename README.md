@@ -55,7 +55,8 @@ npm start
 - `GET /` - 欢迎页面
 
 ### 用户管理接口
-- `GET /api/users` - 获取所有用户
+- `GET /api/users` - 获取用户列表（支持分页）
+- `GET /api/users/search` - 搜索用户
 - `GET /api/users/:id` - 根据ID获取用户
 - `POST /api/users` - 创建新用户
 - `PUT /api/users/:id` - 更新用户信息
@@ -82,9 +83,14 @@ curl -X POST http://localhost:3000/api/users \
   -d '{"name": "测试用户", "email": "test@example.com"}'
 ```
 
-获取所有用户：
+获取用户列表（分页）：
 ```bash
-curl http://localhost:3000/api/users
+curl "http://localhost:3000/api/users?page=1&limit=10"
+```
+
+搜索用户：
+```bash
+curl "http://localhost:3000/api/users/search?keyword=测试&page=1&limit=5"
 ```
 
 #### 图书接口示例

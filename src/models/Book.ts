@@ -54,9 +54,12 @@ export class BookModel {
     const countResult = await query(countSql, params);
     const total = countResult[0].total;
 
-    // 获取分页数据
-    const sql = `SELECT * FROM books ${wherClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    // 确保参数是安全的整数
+    const safeLimit = Math.max(1, Math.min(100, parseInt(limit.toString())));
+    const safeOffset = Math.max(0, parseInt(offset.toString()));
+
+    // 获取分页数据 - 使用字符串拼接避免参数化问题
+    const sql = `SELECT * FROM books ${wherClause} ORDER BY created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`;
     const books = await query(sql, params);
 
     return { books, total };
@@ -81,6 +84,10 @@ export class BookModel {
     const offset = (page - 1) * limit;
     const searchPattern = `%${keyword}%`;
 
+    // 确保参数是安全的整数
+    const safeLimit = Math.max(1, Math.min(100, parseInt(limit.toString())));
+    const safeOffset = Math.max(0, parseInt(offset.toString()));
+
     // 获取总数
     const countSql = `
       SELECT COUNT(*) as total FROM books 
@@ -89,14 +96,14 @@ export class BookModel {
     const countResult = await query(countSql, [searchPattern, searchPattern, searchPattern]);
     const total = countResult[0].total;
 
-    // 获取搜索结果
-    const sql = `
+    // 获取搜索结果 - 使用字符串拼接避免参数化问题
+    const searchSql = `
       SELECT * FROM books 
       WHERE title LIKE ? OR author LIKE ? OR description LIKE ?
       ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
-    const books = await query(sql, [searchPattern, searchPattern, searchPattern, limit, offset]);
+    const books = await query(searchSql, [searchPattern, searchPattern, searchPattern]);
 
     return { books, total };
   }
